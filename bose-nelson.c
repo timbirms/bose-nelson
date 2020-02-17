@@ -1,83 +1,129 @@
-/* Calling bose(n) generates a network
- * to sort n items. See R. C. Bose & R. J. Nelson,
- * "A Sorting Problem", JACM Vol. 9, Pp. 282-296. */
+// sortnet.c
+// generates plans for swap/sort-networks algorithmically.
+// substitutes 'best' plans from academia where available.
+
+// Calling bose(n) either calls bose_nelson(n) to generate a network on the fly, or it
+// chooses a more efficient networks (for inputs of *9..16*) spec'd as macros
+// generated from plans given by http://pages.ripco.net/~jgamble/nw.html
+
+// "A Sorting Problem" -- R. C. Bose & R. J. Nelson, JACM.V9.p282++
+//  https://dblp1.uni-trier.de/db/journals/jacm/jacm9.html
+//  https://dl.acm.org/doi/10.1145/321119.321126
+// (see also: https://www.cs.brandeis.edu/~hugues/sorting_networks.html) parallelize
+
+// Initial Implementation via https://github.com/atinm/bose-nelson
+// <2014-01-14> Last commit Atin M., c139120
+// <2020-02-15 Sa> max: rewritten for my understanding.
+
+// used to make sort-function libraries!
+
+#include <stdlib.h>
+#include <stdint.h>
 #include <stdio.h>
 
-P(int i, int j)
-{
-    /* print out in 0 based notation */
-    printf("swap(%d, %d);\n", i-1, j-1);
+#include "bose-nelson.h"
+#include "bose-specs.h"    // macros to make strings for the 'best' swap plans.
+
+
+// the networks are output by this replacable function.
+// (you would want to do this for code-generation)
+// just *be* *aware* that the algo as implemented is 1-based!
+
+void bose_swap(int64_t i, int64_t j) {
+  //print out in 0 based notation
+  printf("swap(%d, %d);\n",--i,--j);
 }
 
-void Pbracket(int i,  /* value of first element in sequence 1 */
-         int x,  /* length of sequence 1 */
-         int j,  /* value of first element in sequence 2 */
-         int y)  /* length of sequence 2 */
-{
-    int a, b;
+swap_fn_t bose_swap_fn;
 
-    if(x == 1 && y == 1)
-        P(i, j); /* 1 comparison sorts 2 items */
-    else if(x == 1 && y == 2)
-    {
-        /* 2 comparisons inserts an item into an
-         * already sorted sequence of length 2. */
-        P(i, (j + 1));
-        P(i, j);
-    }
-    else if(x == 2 && y == 1)
-    {
-        /* As above, but inserting j */
-        P(i, j);
-        P((i + 1), j);
-    }
-    else
-    {
-        /* Recurse on shorter sequences, attempting
-         * to make the length of one subsequence odd
-         * and the length of the other even. If we
-         * can do this, we eventually merge the two. */
-        a = x/2;
-        b = (x & 1) ? (y/2) : ((y + 1)/2);
-        Pbracket(i, a, j, b);
-        Pbracket((i + a), (x - a), (j + b), (y - b));
-        Pbracket((i + a), (x - a), j, b);
-    }
+
+// <bose_nelson>
+
+void bose_bracket(int i,int x,int j,int y) {
+  //value of first element in sequence 1
+  //length of sequence 1
+  //value of first element in sequence 2
+  //length of sequence 2
+  if(x == 1 && y == 1) {
+    //1 comp sort 2 items
+    bose_swap_fn(i, j);
+  } else if(x == 1 && y == 2) {
+    //2 comps insert an item into a sorted sequence (of length 2.)
+    bose_swap_fn(i, (j+1));
+    bose_swap_fn(i, j);
+  }
+  else if(x == 2 && y == 1) {
+    //As above, but inserting j
+    bose_swap_fn(i, j);
+    bose_swap_fn((i+1), j);
+  } else {
+    //recurse bracket to shorten sequences, attempting to make
+    //the lengths odd/even so we can eventually merge them
+    int a= x/2;
+    int b= (x&1) ?y :y+1;
+        b= b/2;
+    bose_bracket( i,       a,   j,       b);
+    bose_bracket((i+a), (x-a), (j+b), (y-b));
+    bose_bracket((i+a), (x-a),  j,       b);
+  }
 }
 
-void Pstar(int i, /* value of first element in sequence */
-      int m) /* length of sequence */
-{
-    int a;
-
-    if(m > 1)
-    {
-        /* Partition into 2 shorter sequences,
-         * generate a sorting method for each,
-         * and merge the two sub-networks. */
-        a = m/2;
-        Pstar(i, a);
-        Pstar((i + a), (m - a));
-        Pbracket(i, a, (i + a), (m - a));
-    }
+void bose_star(int i, int n) {
+  //sort the sequence {X1,...,Xn}
+  // recurse low-bound of first element and length of sequence
+  // split into tiny bits, then merge them for, tada, a plan!
+  if(n<=1) return;
+  int a= n/2;
+  bose_star(i,a);
+  bose_star((i+a), (n-a));
+  bose_bracket(i, a, (i+a), (n-a));
 }
 
-void bose(int n)
-{
-    Pstar(1, n); /* sort the sequence {X1,...,Xn} */
+// </bose_nelson>
+
+// this is a list of the specification strings created
+// by sort-plans.h ..
+
+const char* bose_best_specs(int n) {
+  switch (n) {
+  case  9: return best09;// 25 (comps)
+  case 10: return best10;// 29
+  case 11: return best11;// 35
+  case 12: return best12;// 39
+  case 13: return best13;// 45
+  case 14: return best14;// 51
+  case 15: return best15;// 56
+  case 16: return best16;// 60
+  default: return NULL;
+  }
 }
 
-int main(int argc, char *argv[])
-{
-    if (argc < 2) {
-        printf("Usage:\n");
-        printf("\t bose-nelson <n>\n");
-        printf("\t\twhere n is the number of items to sort\n");
-        return(-1);
-    }
-    int n = atoi(argv[1]);
-    bose(n);
-    return 0;
+// this code replaces bose_nelson and calls the output
+// directly with values taken from the specification string.
+
+void bose_best(const char* best) {
+  const char* p= best;
+  int cnt= (uint8_t)*p; p++;
+  while (cnt>0) {
+    int i= (uint8_t)*p; p++;
+    int j= (uint8_t)*p; p++;
+    bose_swap_fn(i+1,j+1);
+    cnt--;
+  }
 }
 
-/* End of File */
+// to wrap it up, this is how you get a sort-network for 'n'
+// made via calls to the bose_swap_fn.
+
+// yes, i refrained from taking that fn as a param here.
+// there's no point in trying to pretend that c could do oop.
+
+void bose_nelson(int n, swap_fn_t swap_fn) {
+  bose_swap_fn= (swap_fn==NULL)? bose_swap : swap_fn;
+  const char* best= bose_best_specs(n);
+  if (best==NULL) bose_star(1, n);
+  else bose_best(best);
+}
+
+
+//

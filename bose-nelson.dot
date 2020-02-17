@@ -1,0 +1,58 @@
+# dot -O -T png bose-nelson.dot
+# feh bose-nelson.dot.png
+
+graph bose {
+
+subgraph cluster_0 {
+    style=filled;
+    color=lightgrey;
+    node [style=filled,color=white];
+
+    util_h
+    bose_swap_h
+
+    label = "provide";
+}
+
+subgraph cluster_1 {
+    style=filled;
+    color=lightgrey;
+    node [style=filled,color=white];
+
+    bose_specs_h
+    bose_write_c [ color=greenyellow ]
+    bose_nelson_h
+    bose_nelson_c
+
+    label = "write sort-plans";
+}
+
+subgraph cluster_2 {
+    style=filled;
+    color=lightgrey;
+    node [style=filled,color=white];
+
+    bose_plans_h
+    bose_plans_c
+
+    label = "use generated plans";
+}
+
+bose_test_c [ style=filled,color=darkseagreen ]
+bose_test_c -- bose_swap_h
+bose_test_c -- bose_plans_h
+bose_test_c -- bose_nelson_h
+bose_test_c -- util_h
+
+bose_plans_h -- bose_swap_h
+bose_plans_c -- bose_plans_h
+
+bose_nelson_h -- bose_swap_h
+bose_nelson_c -- bose_nelson_h
+bose_nelson_c -- bose_specs_h
+
+bose_write_c -- bose_swap_h
+bose_write_c -- bose_nelson_h
+
+rankdir=RL
+}
