@@ -1,15 +1,15 @@
-// sortnet.c
+// bose-nelson.c
 // generates plans for swap/sort-networks algorithmically.
 // substitutes 'best' plans from academia where available.
 
-// Calling bose(n) either calls bose_nelson(n) to generate a network on the fly, or it
-// chooses a more efficient networks (for inputs of *9..16*) spec'd as macros
-// generated from plans given by http://pages.ripco.net/~jgamble/nw.html
+// Call bose_nelson(n) to generate a network on the fly, it chooses
+// the most efficient networks ((for inputs of *9..16*) spec'd as macros
+// generated from plans given by http://pages.ripco.net/~jgamble/nw.html)
 
 // "A Sorting Problem" -- R. C. Bose & R. J. Nelson, JACM.V9.p282++
 //  https://dblp1.uni-trier.de/db/journals/jacm/jacm9.html
-//  https://dl.acm.org/doi/10.1145/321119.321126
-// (see also: https://www.cs.brandeis.edu/~hugues/sorting_networks.html) parallelize
+//  https://dl.acm.org/doi/10.1145/321119.321126 (fascinating)
+// (see also: https://www.cs.brandeis.edu/~hugues/sorting_networks.html)<MT!
 
 // Initial Implementation via https://github.com/atinm/bose-nelson
 // <2014-01-14> Last commit Atin M., c139120
@@ -76,7 +76,7 @@ void bose_star(int i, int n) {
   int a= n/2;
   bose_star(i,a);
   bose_star((i+a), (n-a));
-  bose_bracket(i, a, (i+a), (n-a));
+  bose_bracket(i, a, (i+a), (n-a)); //<MT!
 }
 
 // </bose_nelson>
@@ -112,18 +112,15 @@ void bose_best(const char* best) {
   }
 }
 
-// to wrap it up, this is how you get a sort-network for 'n'
-// made via calls to the bose_swap_fn.
+// to wrap it up, this write a sort-network for 'n'
+// via calls to a swap_fn that prints/acts on it.
 
-// yes, i refrained from taking that fn as a param here.
-// there's no point in trying to pretend that c could do oop.
 
-void bose_nelson(int n, swap_fn_t swap_fn) {
-  bose_swap_fn= (swap_fn==NULL)? bose_swap : swap_fn;
+void bose_nelson(int n, swap_fn_t doc_swap) {
+  bose_swap_fn= (doc_swap==NULL)? bose_swap : doc_swap;
   const char* best= bose_best_specs(n);
   if (best==NULL) bose_star(1, n);
   else bose_best(best);
 }
-
 
 //
