@@ -3,9 +3,8 @@
 
 #include "bose-swap.h"
 
-typedef void (*sort_best)(swap_fn_t swap);
+int bose_sort(int n, swap_fn_t cmp_swap);
 
-extern sort_best* sort_best_fns;
-extern int        sort_best_fns_n;
+// returns 0 when a swp_fn for 'n' was found and run.
 
 #endif
