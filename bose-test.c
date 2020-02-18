@@ -52,7 +52,7 @@ void r_swap(int64_t i, int64_t j) {
 // once the code has been generated, the indicies will be 0-based
 // and the code used to do the actual swaps changes to:
 
-void sort_swap(int64_t i, int64_t j) {
+void cmp_swap(int64_t i, int64_t j) {
   if (r[i]<r[j]) return;
   int t=r[i]; r[i]=r[j]; r[j]=t;
 }
@@ -83,15 +83,13 @@ void test2(void) {
 // after the magic-code generation has turned the plan into
 // functions, bose-plans's constructor has set these values:
 
-sort_best* sort_best_fns;
-int sort_best_fns_n;
 
 // with the pre-compiled plans in place, test3, using sort_best_fns[]
 // blazes through the task using the best plan.
 
 void test3(void) {
   memcpy(r,o,sizeof(o));
-  sort_best_fns[n](sort_swap);
+  bose_sort(n,cmp_swap);
 }
 
 // ok .. above you learned about what the rest of this code uses to test
