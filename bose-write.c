@@ -20,7 +20,7 @@
 #define outhdr  "bose-plans.h"
 
 // generate the sort-networks as stand-alone functions
-// accessible through the sort_best_fns[] instanced above.
+// accessible through the sort_plan_fns[] instanced above.
 
 // not pretty; rewrite at your leisure. i went for getting it done.
 
@@ -43,7 +43,7 @@ void bose_write_swap(int64_t i, int64_t j) {
 
 void bose_write_plan(int n) {
   brk=0;
-  sprintf(idx,"void sort_best_%i(swap_fn_t swap) {\n",n);
+  sprintf(idx,"void sort_plan_%i(swap_fn_t swap) {\n",n);
   idx += strlen(idx);
   bose_nelson(n,bose_write_swap);
   if (brk!=0) add("\n");
@@ -52,13 +52,24 @@ void bose_write_plan(int n) {
 
 void bose_write_plan_index(int upto) {
   add("\n");
+  add("typedef void (*sort_plan_fn)(swap_fn_t cmp_swap);\n");
+  add("\n");
+  add("int n_sort_fns;\n");
+  add("sort_plan_fn* sort_fns;\n");
+  add("\n");
+  add("int bose_sort(int n, swap_fn_t cmp_swap) {\n");
+  add("  if (n<2 || n>n_sort_fns) return -1;\n");
+  add("  sort_fns[n](cmp_swap);\n");
+  add("  return 0;\n");
+  add("};\n");
+  add("\n");
   add("void ConstructSortPlans (void) __attribute__ ((constructor));\n");
   add("void ConstructSortPlans (void) {\n");
-  addf("  sort_best_fns_n= %i;\n",upto);
-  addf("  sort_best_fns= malloc(%i * sizeof(sort_best));\n",upto+1);
+  addf("  n_sort_fns= %i;\n",upto);
+  addf("  sort_fns= malloc(%i * sizeof(sort_plan_fn));\n",upto+1);
 
   for (int i=2; i<=upto; i++) {
-    sprintf(idx,"  sort_best_fns[%i]= sort_best_%i;\n",i,i);
+    sprintf(idx,"  sort_fns[%i]= sort_plan_%i;\n",i,i);
     idx += strlen(idx);
   }
   add("}");
