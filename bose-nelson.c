@@ -25,6 +25,9 @@
 #include "bose-specs.h"    // macros to make strings for the 'best' swap plans.
 
 
+//#define mt_show_blocks
+
+
 // the networks are output by this replacable function.
 // (you would want to do this for code-generation)
 // just *be* *aware* that the algo as implemented is 1-based!
@@ -40,6 +43,9 @@ swap_fn_t bose_swap_fn;
 // <bose_nelson>
 
 void bose_bracket(int i,int x,int j,int y) {
+#ifdef mt_show_blocks
+  printf("\n/*%d-%d, %d-%d*/\n",i-1,i-1+x-1,j-1+y-1,j-1);
+#endif
   //value of first element in sequence 1
   //length of sequence 1
   //value of first element in sequence 2
@@ -76,6 +82,9 @@ void bose_star(int i, int n) {
   int a= n/2;
   bose_star(i,a);
   bose_star((i+a), (n-a));
+#ifdef mt_show_blocks
+  printf("\n/*--- %d-%d ---*/\n",i,n);
+#endif
   bose_bracket(i, a, (i+a), (n-a)); //<MT!
 }
 
@@ -118,9 +127,14 @@ void bose_best(const char* best) {
 
 void bose_nelson(int n, swap_fn_t doc_swap) {
   bose_swap_fn= (doc_swap==NULL)? bose_swap : doc_swap;
+#ifdef mt_show_blocks
+  // lets see the bose-nelson plan brackets even though we have a better spec.
+  bose_star(1, n);
+#else
   const char* best= bose_best_specs(n);
   if (best==NULL) bose_star(1, n);
   else bose_best(best);
+#endif
 }
 
 //
